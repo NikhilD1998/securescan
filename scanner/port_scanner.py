@@ -72,14 +72,14 @@ class PortScanner:
 
             for _ in range(self.thread_count):
 
-                t = threading.Thread(
+                thread = threading.Thread(
                     target=self.worker,
                     args=(progress, task)
                 )
 
-                t.start()
+                thread.start()
 
-                threads.append(t)
+                threads.append(thread)
 
             for thread in threads:
                 thread.join()
@@ -95,18 +95,21 @@ class PortScanner:
         table.add_column("Port", justify="center")
         table.add_column("Status", justify="center")
         table.add_column("Service", justify="center")
-        table.add_column(
-            "Banner",
-            overflow="fold"
-        )
+        table.add_column("Protocol", justify="center")
+        table.add_column("Software", justify="center")
+        table.add_column("Version", justify="center")
+        table.add_column("OS", justify="center")
 
-        for port, _, service, banner in self.results:
+        for port, _, service, parsed in self.results:
 
             table.add_row(
                 str(port),
                 "[green]OPEN[/green]",
                 service,
-                banner or "-"
+                parsed.get("protocol", "-"),
+                parsed.get("software", "-"),
+                parsed.get("version", "-"),
+                parsed.get("os", "-"),
             )
 
         console.print()

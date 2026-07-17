@@ -22,11 +22,11 @@ def grab_banner(ip: str, port: int, timeout: float = 2):
 
         banner = sock.recv(1024).decode(
             errors="ignore"
-        ).strip()
+        )
 
         sock.close()
 
-        return banner.replace("\r", "").replace("\n", " ")[:100]
+        return banner
 
     except Exception:
 

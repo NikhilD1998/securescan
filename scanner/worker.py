@@ -1,7 +1,9 @@
 import socket
 
 from .services import get_service_name
-from .banner import grab_banner
+from .enumerator import grab_banner
+
+from parser.banner_parser import parse_banner
 
 
 class Worker:
@@ -21,24 +23,33 @@ class Worker:
 
             if result == 0:
 
+                service = get_service_name(port)
+
+                # Grab raw banner
                 banner = grab_banner(
                     self.ip,
                     port,
                     self.timeout
                 )
 
+                # Parse banner into structured data
+                parsed_banner = parse_banner(
+                    port,
+                    banner
+                )
+
                 return (
                     port,
                     True,
-                    get_service_name(port),
-                    banner
+                    service,
+                    parsed_banner
                 )
 
             return (
                 port,
                 False,
                 "-",
-                ""
+                {}
             )
 
         except Exception:
@@ -46,7 +57,8 @@ class Worker:
             return (
                 port,
                 False,
-                "-"
+                "-",
+                {}
             )
 
         finally:
