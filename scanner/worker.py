@@ -3,10 +3,10 @@ import socket
 from .services import get_service_name
 from .enumerator import grab_banner
 
-from parser.banner_parser import parse_banner
+from scanner.parser.banner_parser import parse_banner
 
 # NEW
-from enumerators.http import enumerate_http
+from scanner.enumerators.http import enumerate_http
 
 
 class Worker:

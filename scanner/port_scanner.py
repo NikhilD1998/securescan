@@ -175,10 +175,7 @@ class PortScanner:
                 http = parsed.get("http", {})
 
                 console.print()
-
-                console.print(
-                    "[bold yellow]HTTP Enumeration[/bold yellow]"
-                )
+                console.print("[bold yellow]HTTP Enumeration[/bold yellow]")
 
                 console.print(
                     f"Title        : {http.get('title') or '-'}"
@@ -204,9 +201,7 @@ class PortScanner:
 
                 console.print()
 
-                console.print(
-                    "[bold yellow]Security Headers[/bold yellow]"
-                )
+                console.print("[bold yellow]Security Headers[/bold yellow]")
 
                 for header, value in http.get(
                     "security_headers",
@@ -216,13 +211,66 @@ class PortScanner:
                     if value == "Missing":
 
                         console.print(
-                            f"[red]{header:<35} Missing[/red]"
+                            f"[red]✘ {header}[/red]"
                         )
 
                     else:
 
                         console.print(
-                            f"[green]{header:<35} {value}[/green]"
+                            f"[green]✔ {header}[/green]"
                         )
+
+                findings = http.get("findings", [])
+
+                if findings:
+
+                    console.print()
+
+                    console.print(
+                        "[bold red]Security Findings[/bold red]"
+                    )
+
+                    severity_colors = {
+                        "Critical": "bold red",
+                        "High": "red",
+                        "Medium": "yellow",
+                        "Low": "cyan",
+                        "Info": "white"
+                    }
+
+                    for index, finding in enumerate(findings, start=1):
+
+                        color = severity_colors.get(
+                            finding.severity,
+                            "white"
+                        )
+
+                        console.rule(
+                            f"[{color}]Finding {index}[/{color}]"
+                        )
+
+                        console.print(
+                            f"[bold]Severity[/bold]      : [{color}]{finding.severity}[/{color}]"
+                        )
+
+                        console.print(
+                            f"[bold]Title[/bold]         : {finding.title}"
+                        )
+
+                        console.print(
+                            f"[bold]Description[/bold]   : {finding.description}"
+                        )
+
+                        console.print(
+                            f"[bold]Recommendation[/bold]: {finding.recommendation}"
+                        )
+
+                else:
+
+                    console.print()
+
+                    console.print(
+                        "[green]No security findings detected.[/green]"
+                    )
 
             console.print()

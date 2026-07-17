@@ -1,8 +1,12 @@
 import socket
 import re
 
+from scanner.analyzers.http_analyzer import HTTPAnalyzer
+
 
 def enumerate_http(ip: str, port: int, timeout: float):
+
+    analyzer = HTTPAnalyzer()
 
     result = {
         "title": "",
@@ -11,7 +15,8 @@ def enumerate_http(ip: str, port: int, timeout: float):
         "cookies": [],
         "location": "",
         "headers": {},
-        "security_headers": {}
+        "security_headers": {},
+        "findings": []
     }
 
     try:
@@ -40,40 +45,32 @@ def enumerate_http(ip: str, port: int, timeout: float):
 
             response += chunk
 
-        response = response.decode(
-            errors="ignore"
-        )
+        response = response.decode(errors="ignore")
 
-        header_text = response.split(
-            "\r\n\r\n",
-            1
-        )[0]
+        parts = response.split("\r\n\r\n", 1)
 
-        body = ""
+        header_text = parts[0]
 
-        if "\r\n\r\n" in response:
-            body = response.split(
-                "\r\n\r\n",
-                1
-            )[1]
+        body = parts[1] if len(parts) > 1 else ""
 
-        # -------------------------
-        # Parse headers
-        # -------------------------
+        # ----------------------------------
+        # Parse Response Headers
+        # ----------------------------------
 
         for line in header_text.split("\r\n")[1:]:
 
             if ":" not in line:
                 continue
 
-            key, value = line.split(
-                ":",
-                1
-            )
+            key, value = line.split(":", 1)
 
             result["headers"][key.strip()] = value.strip()
 
         headers = result["headers"]
+
+        # ----------------------------------
+        # Common Headers
+        # ----------------------------------
 
         result["server"] = headers.get(
             "Server",
@@ -90,9 +87,9 @@ def enumerate_http(ip: str, port: int, timeout: float):
             ""
         )
 
-        # -------------------------
+        # ----------------------------------
         # Cookies
-        # -------------------------
+        # ----------------------------------
 
         for key, value in headers.items():
 
@@ -100,11 +97,11 @@ def enumerate_http(ip: str, port: int, timeout: float):
 
                 result["cookies"].append(value)
 
-        # -------------------------
+        # ----------------------------------
         # Security Headers
-        # -------------------------
+        # ----------------------------------
 
-        security = [
+        security_headers = [
 
             "Strict-Transport-Security",
 
@@ -118,16 +115,16 @@ def enumerate_http(ip: str, port: int, timeout: float):
 
         ]
 
-        for header in security:
+        for header in security_headers:
 
             result["security_headers"][header] = headers.get(
                 header,
                 "Missing"
             )
 
-        # -------------------------
+        # ----------------------------------
         # HTML Title
-        # -------------------------
+        # ----------------------------------
 
         match = re.search(
             r"<title>(.*?)</title>",
@@ -139,10 +136,18 @@ def enumerate_http(ip: str, port: int, timeout: float):
 
             result["title"] = match.group(1).strip()
 
+        # ----------------------------------
+        # Security Analysis
+        # ----------------------------------
+
+        result["findings"] = analyzer.analyze(result)
+
         sock.close()
 
         return result
 
     except Exception:
 
-        return result   
+        result["findings"] = []
+
+        return result
