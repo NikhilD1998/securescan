@@ -221,6 +221,131 @@ class PortScanner:
                         console.print("[dim]None Detected[/dim]")
 
                 # ----------------------------------
+                # Web Recon
+                # ----------------------------------
+
+                recon = http.get("recon", {})
+
+                console.print()
+                console.print("[bold magenta]Web Recon[/bold magenta]")
+
+                # -------------------------
+                # Interesting Paths
+                # -------------------------
+
+                paths = recon.get("paths", [])
+
+                console.print("\n[bold]Interesting Paths[/bold]")
+
+                if paths:
+
+                    for path in paths:
+
+                        status = path.get("status", "-")
+
+                        color = "green"
+
+                        if status in (301, 302, 307, 308):
+                            color = "yellow"
+
+                        elif status in (401, 403):
+                            color = "red"
+
+                        console.print(
+                            f"[{color}]✓[/{color}] "
+                            f"{path['path']} "
+                            f"({status})"
+                        )
+
+                else:
+
+                    console.print("[dim]None Found[/dim]")
+
+                # -------------------------
+                # Allowed Methods
+                # -------------------------
+
+                methods = recon.get("methods", [])
+
+                console.print("\n[bold]Allowed Methods[/bold]")
+
+                if methods:
+
+                    console.print(
+                        ", ".join(methods)
+                    )
+
+                else:
+
+                    console.print("[dim]Unknown[/dim]")
+
+                # -------------------------
+                # Redirects
+                # -------------------------
+
+                redirect = recon.get("redirects", {})
+
+                console.print("\n[bold]Redirect[/bold]")
+
+                if redirect.get("redirect"):
+
+                    console.print(
+                        f"{redirect['status']} → {redirect['location']}"
+                    )
+
+                else:
+
+                    console.print("[dim]No Redirect[/dim]")
+
+                # -------------------------
+                # Interesting Headers
+                # -------------------------
+
+                headers = recon.get("headers", {})
+
+                console.print("\n[bold]Interesting Headers[/bold]")
+
+                if headers:
+
+                    for key, value in headers.items():
+
+                        console.print(
+                            f"{key}: {value}"
+                        )
+
+                else:
+
+                    console.print("[dim]None[/dim]")
+
+                # -------------------------
+                # Favicon
+                # -------------------------
+
+                favicon = recon.get("favicon", {})
+
+                console.print("\n[bold]Favicon[/bold]")
+
+                if favicon.get("found"):
+
+                    console.print(
+                        f"Found   : Yes"
+                    )
+
+                    console.print(
+                        f"Size    : {favicon['size']} bytes"
+                    )
+
+                    console.print(
+                        f"SHA256  : {favicon['sha256']}"
+                    )
+
+                else:
+
+                    console.print(
+                        "[dim]Not Found[/dim]"
+                    )
+
+                # ----------------------------------
                 # Security Headers
                 # ----------------------------------
 

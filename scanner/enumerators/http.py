@@ -3,6 +3,7 @@ import re
 
 from scanner.analyzers.http_analyzer import HTTPAnalyzer
 from scanner.fingerprint.detector import fingerprint
+from scanner.recon.detector import recon
 
 
 def enumerate_http(ip: str, port: int, timeout: float):
@@ -19,6 +20,7 @@ def enumerate_http(ip: str, port: int, timeout: float):
         "body": "",
         "security_headers": {},
         "fingerprint": {},
+        "recon": {}, 
         "findings": []
     }
 
@@ -145,7 +147,12 @@ def enumerate_http(ip: str, port: int, timeout: float):
         # ----------------------------------
 
         result["fingerprint"] = fingerprint(result)
-
+        
+        result["recon"] = recon(
+            ip,
+            port,
+            timeout
+        )
         # ----------------------------------
         # Security Analysis
         # ----------------------------------
@@ -159,6 +166,7 @@ def enumerate_http(ip: str, port: int, timeout: float):
     except Exception:
 
         result["fingerprint"] = {}
+        result["recon"] = {}
         result["findings"] = []
 
         return result
