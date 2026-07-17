@@ -177,21 +177,10 @@ class PortScanner:
                 console.print()
                 console.print("[bold yellow]HTTP Enumeration[/bold yellow]")
 
-                console.print(
-                    f"Title        : {http.get('title') or '-'}"
-                )
-
-                console.print(
-                    f"Server       : {http.get('server') or '-'}"
-                )
-
-                console.print(
-                    f"Powered By   : {http.get('powered_by') or '-'}"
-                )
-
-                console.print(
-                    f"Redirect     : {http.get('location') or '-'}"
-                )
+                console.print(f"Title        : {http.get('title') or '-'}")
+                console.print(f"Server       : {http.get('server') or '-'}")
+                console.print(f"Powered By   : {http.get('powered_by') or '-'}")
+                console.print(f"Redirect     : {http.get('location') or '-'}")
 
                 cookies = http.get("cookies", [])
 
@@ -199,8 +188,43 @@ class PortScanner:
                     f"Cookies      : {', '.join(cookies) if cookies else '-'}"
                 )
 
-                console.print()
+                # ----------------------------------
+                # Technology Fingerprint
+                # ----------------------------------
 
+                fp = http.get("fingerprint", {})
+
+                console.print()
+                console.print("[bold cyan]Technology Fingerprint[/bold cyan]")
+
+                sections = [
+                    ("Server", "server"),
+                    ("Backend", "backend"),
+                    ("Frontend", "frontend"),
+                    ("CMS", "cms"),
+                    ("CDN", "cdn"),
+                ]
+
+                for title, key in sections:
+
+                    console.print(f"\n[bold]{title}[/bold]")
+
+                    values = fp.get(key, [])
+
+                    if values:
+
+                        for tech in values:
+                            console.print(f"[green]✓[/green] {tech}")
+
+                    else:
+
+                        console.print("[dim]None Detected[/dim]")
+
+                # ----------------------------------
+                # Security Headers
+                # ----------------------------------
+
+                console.print()
                 console.print("[bold yellow]Security Headers[/bold yellow]")
 
                 for header, value in http.get(
@@ -211,24 +235,25 @@ class PortScanner:
                     if value == "Missing":
 
                         console.print(
-                            f"[red]✘ {header}[/red]"
+                            f"[red]✘[/red] {header}"
                         )
 
                     else:
 
                         console.print(
-                            f"[green]✔ {header}[/green]"
+                            f"[green]✔[/green] {header}"
                         )
+
+                # ----------------------------------
+                # Security Findings
+                # ----------------------------------
 
                 findings = http.get("findings", [])
 
                 if findings:
 
                     console.print()
-
-                    console.print(
-                        "[bold red]Security Findings[/bold red]"
-                    )
+                    console.print("[bold red]Security Findings[/bold red]")
 
                     severity_colors = {
                         "Critical": "bold red",
@@ -237,6 +262,30 @@ class PortScanner:
                         "Low": "cyan",
                         "Info": "white"
                     }
+
+                    counts = {
+                        "Critical": 0,
+                        "High": 0,
+                        "Medium": 0,
+                        "Low": 0,
+                        "Info": 0
+                    }
+
+                    for finding in findings:
+                        counts[finding.severity] = counts.get(finding.severity, 0) + 1
+
+                    console.print()
+                    console.print("[bold]Summary[/bold]")
+
+                    for severity in ["Critical", "High", "Medium", "Low", "Info"]:
+
+                        color = severity_colors[severity]
+
+                        console.print(
+                            f"[{color}]{severity:<8}[/{color}] : {counts[severity]}"
+                        )
+
+                    console.print(f"\nTotal Findings : {len(findings)}")
 
                     for index, finding in enumerate(findings, start=1):
 
@@ -268,9 +317,6 @@ class PortScanner:
                 else:
 
                     console.print()
-
-                    console.print(
-                        "[green]No security findings detected.[/green]"
-                    )
+                    console.print("[green]No security findings detected.[/green]")
 
             console.print()

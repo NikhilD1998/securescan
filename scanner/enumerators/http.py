@@ -2,6 +2,7 @@ import socket
 import re
 
 from scanner.analyzers.http_analyzer import HTTPAnalyzer
+from scanner.fingerprint.detector import fingerprint
 
 
 def enumerate_http(ip: str, port: int, timeout: float):
@@ -15,7 +16,9 @@ def enumerate_http(ip: str, port: int, timeout: float):
         "cookies": [],
         "location": "",
         "headers": {},
+        "body": "",
         "security_headers": {},
+        "fingerprint": {},
         "findings": []
     }
 
@@ -50,8 +53,9 @@ def enumerate_http(ip: str, port: int, timeout: float):
         parts = response.split("\r\n\r\n", 1)
 
         header_text = parts[0]
-
         body = parts[1] if len(parts) > 1 else ""
+
+        result["body"] = body
 
         # ----------------------------------
         # Parse Response Headers
@@ -137,6 +141,12 @@ def enumerate_http(ip: str, port: int, timeout: float):
             result["title"] = match.group(1).strip()
 
         # ----------------------------------
+        # Technology Fingerprinting
+        # ----------------------------------
+
+        result["fingerprint"] = fingerprint(result)
+
+        # ----------------------------------
         # Security Analysis
         # ----------------------------------
 
@@ -148,6 +158,7 @@ def enumerate_http(ip: str, port: int, timeout: float):
 
     except Exception:
 
+        result["fingerprint"] = {}
         result["findings"] = []
 
         return result
