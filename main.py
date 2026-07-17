@@ -13,13 +13,7 @@ def main():
 
     ports = parse_ports(args.ports)
 
-    console.print(
-        f"\n[cyan]Scanning[/cyan] {args.target}"
-    )
-
-    console.print(
-        f"[yellow]Ports:[/yellow] {len(ports)}\n"
-    )
+    console.print()
 
     scanner = PortScanner(args.target)
 

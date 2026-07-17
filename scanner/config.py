@@ -1,0 +1,2 @@
+THREADS = 50
+TIMEOUT = 1.0

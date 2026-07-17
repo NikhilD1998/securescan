@@ -1,10 +1,14 @@
 import socket
 import time
+import queue
+import threading
 
 from rich.console import Console
+from rich.progress import Progress
 from rich.table import Table
 
-from .services import get_service_name
+from .config import THREADS, TIMEOUT
+from .worker import Worker
 
 console = Console()
 
@@ -14,52 +18,120 @@ class PortScanner:
     def __init__(self, target: str):
 
         self.target = target
-        self.timeout = 0.5
+        self.ip = socket.gethostbyname(target)
 
-    def scan_port(self, port: int) -> bool:
+        self.timeout = TIMEOUT
+        self.thread_count = THREADS
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.port_queue = queue.Queue()
+        self.results = []
 
-        sock.settimeout(self.timeout)
+        self.lock = threading.Lock()
 
-        result = sock.connect_ex((self.target, port))
+    def worker(self, progress, task):
 
-        sock.close()
+        scanner = Worker(
+            self.ip,
+            self.timeout
+        )
 
-        return result == 0
+        while True:
+
+            try:
+                port = self.port_queue.get_nowait()
+
+            except queue.Empty:
+                break
+
+            result = scanner.scan(port)
+
+            if result[1]:
+
+                with self.lock:
+                    self.results.append(result)
+
+            progress.update(task, advance=1)
+
+            self.port_queue.task_done()
 
     def scan(self, ports: list[int]):
 
-        table = Table(title=f"Scan Results - {self.target}")
+        for port in ports:
+            self.port_queue.put(port)
 
-        table.add_column("Port")
-        table.add_column("Status")
-        table.add_column("Service")
+        start = time.perf_counter()
 
-        start = time.time()
+        with Progress() as progress:
 
-        open_ports = 0
+            task = progress.add_task(
+                "[cyan]Scanning...",
+                total=len(ports)
+            )
 
-        total = len(ports)
+            threads = []
 
-        for index, port in enumerate(ports, start=1):
+            for _ in range(self.thread_count):
 
-            print(f"\rScanning Port {port} ({index}/{total})...", end="", flush=True)
-
-            if self.scan_port(port):
-
-                open_ports += 1
-
-                table.add_row(
-                    str(port),
-                    "[green]OPEN[/green]",
-                    get_service_name(port)
+                t = threading.Thread(
+                    target=self.worker,
+                    args=(progress, task)
                 )
 
-        print()  # Move to the next line
+                t.start()
 
-        elapsed = time.time() - start
+                threads.append(t)
 
+            for thread in threads:
+                thread.join()
+
+        elapsed = time.perf_counter() - start
+
+        self.results.sort()
+
+        table = Table(
+            title=f"Scan Results - {self.target}"
+        )
+
+        table.add_column("Port", justify="center")
+        table.add_column("Status", justify="center")
+        table.add_column("Service", justify="center")
+
+        for port, _, service in self.results:
+
+            table.add_row(
+                str(port),
+                "[green]OPEN[/green]",
+                service
+            )
+
+        console.print()
         console.print(table)
-        console.print(f"\nOpen Ports : {open_ports}")
-        console.print(f"Scan Time : {elapsed:.2f}s")
+        console.print()
+
+        console.print(
+            f"[cyan]Target[/cyan] : {self.target}"
+        )
+
+        console.print(
+            f"[cyan]Resolved IP[/cyan] : {self.ip}"
+        )
+
+        console.print(
+            f"[green]Open Ports[/green] : {len(self.results)}"
+        )
+
+        console.print(
+            f"[yellow]Ports Scanned[/yellow] : {len(ports)}"
+        )
+
+        console.print(
+            f"[magenta]Threads[/magenta] : {self.thread_count}"
+        )
+
+        console.print(
+            f"[blue]Timeout[/blue] : {self.timeout}s"
+        )
+
+        console.print(
+            f"[white]Scan Time[/white] : {elapsed:.2f}s"
+        )
