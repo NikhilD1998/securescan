@@ -6,6 +6,7 @@ import threading
 from rich.console import Console
 from rich.progress import Progress
 from rich.table import Table
+from scanner.reports.json import export_json
 
 from .config import THREADS, TIMEOUT
 from .worker import Worker
@@ -85,6 +86,13 @@ class PortScanner:
                 thread.join()
 
         elapsed = time.perf_counter() - start
+
+        export_json(
+            self.target,
+            self.ip,
+            elapsed,
+            self.results
+        )
 
         self.results.sort()
 

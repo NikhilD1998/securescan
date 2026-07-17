@@ -1,9 +1,9 @@
-import socket
 import hashlib
 
+from scanner.http.client import HTTPClient
 
-def enumerate_favicon(ip: str, port: int, timeout: float) -> dict:
 
+def enumerate_favicon(client: HTTPClient) -> dict:
     result = {
         "found": False,
         "size": 0,
@@ -14,44 +14,12 @@ def enumerate_favicon(ip: str, port: int, timeout: float) -> dict:
 
     try:
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
+        response = client.get("/favicon.ico")
 
-        sock.connect((ip, port))
-
-        request = (
-            "GET /favicon.ico HTTP/1.1\r\n"
-            f"Host: {ip}\r\n"
-            "Connection: close\r\n\r\n"
-        )
-
-        sock.send(request.encode())
-
-        response = b""
-
-        while True:
-
-            chunk = sock.recv(4096)
-
-            if not chunk:
-                break
-
-            response += chunk
-
-        sock.close()
-
-        parts = response.split(b"\r\n\r\n", 1)
-
-        if len(parts) != 2:
+        if response.status != 200:
             return result
 
-        headers = parts[0].decode(errors="ignore")
-        body = parts[1]
-
-        status = headers.split("\r\n")[0]
-
-        if "200" not in status:
-            return result
+        body = response.body
 
         result["found"] = True
         result["size"] = len(body)

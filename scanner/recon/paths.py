@@ -1,5 +1,6 @@
-import socket
 import re
+
+from scanner.http.client import HTTPClient
 
 
 PATHS = [
@@ -16,7 +17,21 @@ PATHS = [
 ]
 
 
-def enumerate_paths(ip: str, port: int, timeout: float) -> list[dict]:
+INTERESTING_STATUS = {
+    200,
+    201,
+    204,
+    301,
+    302,
+    307,
+    308,
+    401,
+    403,
+    405,
+}
+
+
+def enumerate_paths(client: HTTPClient) -> list[dict]:
 
     results = []
 
@@ -24,68 +39,28 @@ def enumerate_paths(ip: str, port: int, timeout: float) -> list[dict]:
 
         try:
 
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(timeout)
+            response = client.get(path)
 
-            sock.connect((ip, port))
-
-            request = (
-                f"GET {path} HTTP/1.1\r\n"
-                f"Host: {ip}\r\n"
-                f"Connection: close\r\n\r\n"
-            )
-
-            sock.send(request.encode())
-
-            response = b""
-
-            while True:
-
-                chunk = sock.recv(4096)
-
-                if not chunk:
-                    break
-
-                response += chunk
-
-            sock.close()
-
-            response = response.decode(errors="ignore")
-
-            header, _, body = response.partition("\r\n\r\n")
-
-            first_line = header.split("\r\n")[0]
-
-            match = re.search(
-                r"HTTP/\d\.\d\s+(\d+)\s+(.*)",
-                first_line
-            )
-
-            status_code = 0
-            status_text = ""
-
-            if match:
-
-                status_code = int(match.group(1))
-                status_text = match.group(2)
+            if response.status not in INTERESTING_STATUS:
+                continue
 
             title = ""
 
-            title_match = re.search(
+            match = re.search(
                 r"<title>(.*?)</title>",
-                body,
+                response.text,
                 re.I | re.S
             )
 
-            if title_match:
+            if match:
 
-                title = title_match.group(1).strip()
+                title = match.group(1).strip()
 
             results.append(
                 {
                     "path": path,
-                    "status": status_code,
-                    "message": status_text,
+                    "status": response.status,
+                    "message": response.reason,
                     "title": title,
                 }
             )
