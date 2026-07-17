@@ -5,6 +5,9 @@ from .enumerator import grab_banner
 
 from parser.banner_parser import parse_banner
 
+# NEW
+from enumerators.http import enumerate_http
+
 
 class Worker:
 
@@ -25,18 +28,34 @@ class Worker:
 
                 service = get_service_name(port)
 
-                # Grab raw banner
+                # -------------------------
+                # Grab Banner
+                # -------------------------
+
                 banner = grab_banner(
                     self.ip,
                     port,
                     self.timeout
                 )
 
-                # Parse banner into structured data
                 parsed_banner = parse_banner(
                     port,
                     banner
                 )
+
+                # -------------------------
+                # HTTP Enumeration
+                # -------------------------
+
+                if parsed_banner.get("protocol") == "HTTP":
+
+                    http_info = enumerate_http(
+                        self.ip,
+                        port,
+                        self.timeout
+                    )
+
+                    parsed_banner["http"] = http_info
 
                 return (
                     port,

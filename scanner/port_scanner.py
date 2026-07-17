@@ -116,6 +116,8 @@ class PortScanner:
         console.print(table)
         console.print()
 
+        self.print_service_details()
+
         console.print(
             f"[cyan]Target[/cyan] : {self.target}"
         )
@@ -143,3 +145,84 @@ class PortScanner:
         console.print(
             f"[white]Scan Time[/white] : {elapsed:.2f}s"
         )
+
+    def print_service_details(self):
+
+        console.print("[bold cyan]Service Details[/bold cyan]\n")
+
+        for port, _, service, parsed in self.results:
+
+            console.rule(f"[green]Port {port} ({service})")
+
+            console.print(
+                f"[bold]Software:[/bold] {parsed.get('software', '-')}"
+            )
+
+            console.print(
+                f"[bold]Version:[/bold] {parsed.get('version', '-')}"
+            )
+
+            console.print(
+                f"[bold]Platform:[/bold] {parsed.get('os', '-')}"
+            )
+
+            # -----------------------------
+            # HTTP Details
+            # -----------------------------
+
+            if parsed.get("protocol") == "HTTP":
+
+                http = parsed.get("http", {})
+
+                console.print()
+
+                console.print(
+                    "[bold yellow]HTTP Enumeration[/bold yellow]"
+                )
+
+                console.print(
+                    f"Title        : {http.get('title') or '-'}"
+                )
+
+                console.print(
+                    f"Server       : {http.get('server') or '-'}"
+                )
+
+                console.print(
+                    f"Powered By   : {http.get('powered_by') or '-'}"
+                )
+
+                console.print(
+                    f"Redirect     : {http.get('location') or '-'}"
+                )
+
+                cookies = http.get("cookies", [])
+
+                console.print(
+                    f"Cookies      : {', '.join(cookies) if cookies else '-'}"
+                )
+
+                console.print()
+
+                console.print(
+                    "[bold yellow]Security Headers[/bold yellow]"
+                )
+
+                for header, value in http.get(
+                    "security_headers",
+                    {}
+                ).items():
+
+                    if value == "Missing":
+
+                        console.print(
+                            f"[red]{header:<35} Missing[/red]"
+                        )
+
+                    else:
+
+                        console.print(
+                            f"[green]{header:<35} {value}[/green]"
+                        )
+
+            console.print()
