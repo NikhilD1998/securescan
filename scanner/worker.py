@@ -1,6 +1,7 @@
 import socket
 
 from .services import get_service_name
+from .banner import grab_banner
 
 
 class Worker:
@@ -20,16 +21,24 @@ class Worker:
 
             if result == 0:
 
+                banner = grab_banner(
+                    self.ip,
+                    port,
+                    self.timeout
+                )
+
                 return (
                     port,
                     True,
-                    get_service_name(port)
+                    get_service_name(port),
+                    banner
                 )
 
             return (
                 port,
                 False,
-                "-"
+                "-",
+                ""
             )
 
         except Exception:

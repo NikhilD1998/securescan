@@ -95,13 +95,18 @@ class PortScanner:
         table.add_column("Port", justify="center")
         table.add_column("Status", justify="center")
         table.add_column("Service", justify="center")
+        table.add_column(
+            "Banner",
+            overflow="fold"
+        )
 
-        for port, _, service in self.results:
+        for port, _, service, banner in self.results:
 
             table.add_row(
                 str(port),
                 "[green]OPEN[/green]",
-                service
+                service,
+                banner or "-"
             )
 
         console.print()
